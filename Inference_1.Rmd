@@ -1,0 +1,143 @@
+---
+title: "Exponential Distribution vs. Central Limit Theorem"
+author: "Federico Roman"
+date: "21 June 2015"
+output: 
+  html_document:
+    keep_md: true
+    theme: united
+    highlight: tango
+---
+
+##Overview
+
+In this project we will investigate the exponential distribution in R and compare it with the Central Limit Theorem. The exponential distribution can be simulated in R with rexp(n, lambda) where lambda is the rate parameter. The mean of exponential distribution is 1/lambda and the standard deviation is also 1/lambda. Set lambda = 0.2 for all of the simulations. We will investigate the distribution of averages of 40 exponentials. Note that we will need to do a thousand simulations.
+
+We will attempt to answer the following questions:
+
+- Show the sample mean and compare it to the theoretical mean of the distribution.
+- Show how variable the sample is (via variance) and compare it to the theoretical variance of the distribution.
+- Show that the distribution is approximately normal.
+
+##Analysis
+
+```{r}
+library(ggplot2)
+
+```
+
+
+##Simulations
+
+```{r}
+# lambda is 0.2
+lambda = 0.2
+
+# we will be using 40 exponentials
+n = 40
+
+# we will be running 1000 simulations
+nsims = 1:1000
+
+# set a seed to reproduce the data
+set.seed(876)
+
+# gather the means
+means <- data.frame(x = sapply(nsims, function(x) {mean(rexp(n, lambda))}))
+
+# lets take a looks at the top means
+head(means)
+```
+
+When we graph the means we can begin to see how the distribution appears to be normal…but let's examine further…
+
+```{r}
+ggplot(data = means, aes(x = x)) + 
+  geom_histogram(binwidth=0.1, aes(y=..density..)) +
+  labs(x="Means") +
+  labs(y="Density")
+```
+
+## Sample Mean vs. Theoretical Mean
+
+The expected mean (or mu) of an exponential distribution of lamda is:
+
+```{r}
+simmu = 1 / lambda
+print(simmu)
+```
+
+The sample mean of our 1000 simulations of 40 random samples of exponential distributions is:
+
+```{r}
+simmean <- mean(means$x)
+print(simmean)
+```
+
+## Sample Variance vs. Theoretical Variance
+First let's look at the expected standard deviation:
+
+```{r}
+simexpsd <- (1/lambda)/sqrt(n)
+print(simexpsd)
+```
+
+And the variance of the expected standard deviation:
+
+```{r}
+simexpvar <- simexpsd^2
+print(simexpvar)
+```
+
+Now let's look at the standard deviation of the simulated means:
+
+```{r}
+simsd <- sd(means$x)
+print(simsd)
+```
+
+And the variance of the simulated means:
+
+```{r}
+simvar <- var(means$x)
+print(simvar)
+```
+As one can see, the results are extremely close.
+
+Is the Distribution Normal?
+
+By looking at the below graph we can see that the distribution of the simulated means (blue) approaches the normal distribution (red) and that their means (blue and red vertical lines, respectively) approach each other as well.
+
+```{r}
+ggplot(data = means, aes(x = x)) + 
+  geom_histogram(binwidth=0.1, aes(y=..density..), fill = I('#8A8A8A'),) +
+  stat_function(fun = dnorm, arg = list(mean = simmu , sd = simsd), colour = "red", size=2) + 
+  geom_vline(xintercept = simmu, size=1, colour="red") + 
+  geom_density(colour="blue", size=2) +
+  geom_vline(xintercept = simmean, size=1, colour="blue") + 
+  labs(x="Means") +
+  labs(y="Density")
+```
+
+We can take this a step further and increase the number of simulations from 1000 to 100,000 and see that the distrubtions become even closer, as shown below:
+
+```{r}
+nsims = 1:100000
+set.seed(876)
+means <- data.frame(x = sapply(nsims, function(x) {mean(rexp(n, lambda))}))
+
+# recalculate
+simmean <- mean(means$x)
+simsd <- sd(means$x)
+simmu = 1 / lambda
+
+ggplot(data = means, aes(x = x)) + 
+  geom_histogram(binwidth=0.1, aes(y=..density..), fill = I('#8A8A8A'),) +
+  stat_function(fun = dnorm, arg = list(mean = simmu , sd = simsd), colour = "red", size=2) + 
+  geom_vline(xintercept = simmu, size=1, colour="red") + 
+  geom_density(colour="blue", size=2) +
+  geom_vline(xintercept = simmean, size=1, colour="blue") + 
+  labs(x="Means") +
+  labs(y="Density")
+
+```
